@@ -12,6 +12,7 @@ OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@pass-copy-to-clipboard" "on")"
 OPT_HIDE_PREVIEW="$(get_tmux_option "@pass-hide-preview" "off")"
 OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "on")"
 OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
+PASS_BIN=""
 
 spinner_pid=""
 
@@ -57,6 +58,16 @@ spinner_stop() {
 
 # ------------------------------------------------------------------------------
 
+detect_pass_bin() {
+    if is_cmd_exists "gopass"; then
+        echo "gopass"
+    elif is_cmd_exists "pass"; then
+        echo "pass"
+    else
+        echo ""
+    fi
+}
+
 get_items() {
     pushd "${PASSWORD_STORE_DIR:-$HOME/.password-store}" 1>/dev/null || exit 2
     find . -type f -name '*.gpg' | sed 's/\.gpg//' | sed 's/^\.\///' | sort
@@ -64,11 +75,11 @@ get_items() {
 }
 
 get_password() {
-    pass show "${1}" | head -n1
+    "$PASS_BIN" show "${1}" | head -n1
 }
 
 get_otp() {
-    pass otp "${1}" | head -n1
+    "$PASS_BIN" otp "${1}" | head -n1
 }
 
 get_login() {
@@ -76,7 +87,7 @@ get_login() {
     local match
 
     for candidate in $keys; do
-        match=$(pass show "${1}" | grep -i "$candidate" | cut -d ':' -f 2 | xargs)
+        match=$("$PASS_BIN" show "${1}" | grep -i "$candidate" | cut -d ':' -f 2 | xargs)
 
         if [[ ! -z $match ]]; then break; fi
     done
@@ -88,6 +99,13 @@ get_login() {
 
 main() {
     local -r ACTIVE_PANE="$1"
+
+    PASS_BIN="$(detect_pass_bin)"
+
+    if [[ -z "$PASS_BIN" ]]; then
+        display_message "install gopass or pass to use this plugin"
+        exit 1
+    fi
 
     local items
     local sel
@@ -102,9 +120,9 @@ main() {
     fi
 
     if [[ "$OPT_HIDE_PW_FROM_PREVIEW" == "on" ]]; then
-        preview_cmd='pass show {} | tail -n+2'
+        preview_cmd="${PASS_BIN} show {} | tail -n+2"
     else
-        preview_cmd='pass show {}'
+        preview_cmd="${PASS_BIN} show {}"
     fi
 
     spinner_start "Fetching items"
@@ -173,11 +191,11 @@ main() {
         ;;
 
     ctrl-e)
-        pass edit "$text"
+        "$PASS_BIN" edit "$text"
         ;;
 
     ctrl-d)
-        pass rm "$text"
+        "$PASS_BIN" rm "$text"
         ;;
 
     esac
