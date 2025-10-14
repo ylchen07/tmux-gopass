@@ -8,9 +8,9 @@ if command -v direnv >/dev/null 2>&1; then
     eval "$(direnv export bash)"
 fi
 
-OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@pass-copy-to-clipboard" "off")"
+OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@pass-copy-to-clipboard" "on")"
 OPT_HIDE_PREVIEW="$(get_tmux_option "@pass-hide-preview" "off")"
-OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "off")"
+OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "on")"
 OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
 
 spinner_pid=""
