@@ -219,6 +219,7 @@ main() {
     local sel
     local key
     local entry
+    local -r fzf_expect_keys='enter,ctrl-c,esc,alt-enter,alt-space'
     local -r header='enter=paste, alt-enter=user, tab=preview, alt-space=otp'
     local -a fzf_args=(
         --inline-info
@@ -227,7 +228,7 @@ main() {
         --bind=tab:toggle-preview
         --bind=alt-enter:accept
         --header="$header"
-        --expect=enter,ctrl-c,esc,alt-enter,alt-space
+        --expect="$fzf_expect_keys"
         --preview="$(build_preview_command)"
     )
 
