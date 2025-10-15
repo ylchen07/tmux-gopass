@@ -219,7 +219,7 @@ main() {
     local sel
     local key
     local entry
-    local -r header='enter=paste, alt-enter=user, ctrl-e=edit, ctrl-d=delete, tab=preview, alt-space=otp'
+    local -r header='enter=paste, alt-enter=user, tab=preview, alt-space=otp'
     local -a fzf_args=(
         --inline-info
         --no-multi
@@ -227,7 +227,7 @@ main() {
         --bind=tab:toggle-preview
         --bind=alt-enter:accept
         --header="$header"
-        --expect=enter,ctrl-e,ctrl-d,ctrl-c,esc,alt-enter,alt-space
+        --expect=enter,ctrl-c,esc,alt-enter,alt-space
         --preview="$(build_preview_command)"
     )
 
@@ -278,14 +278,6 @@ main() {
 
     alt-space)
         handle_otp_selection "$ACTIVE_PANE" "$entry"
-        ;;
-
-    ctrl-e)
-        gopass edit "$entry"
-        ;;
-
-    ctrl-d)
-        gopass rm "$entry"
         ;;
 
     esac

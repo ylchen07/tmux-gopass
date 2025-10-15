@@ -12,14 +12,14 @@
 - Copy password (<kbd>Enter</kbd>)
 - Copy username (<kbd>Alt</kbd>-<kbd>Enter</kbd>)
 - OTP support (<kbd>Alt</kbd>-<kbd>Space</kbd>)
-- Edit (<kbd>Ctrl</kbd>-<kbd>e</kbd>) and Delete (<kbd>Ctrl</kbd>-<kbd>d</kbd>)
 - Toggle password preview (<kbd>Tab</kbd>)
+- Relies on gopass for secret lookup and clipboard handling
 
 ## Install
 
 ### Requirements
 
-* [password-store](https://www.passwordstore.org)
+* [gopass](https://www.gopass.pw)
 * [tmux](https://github.com/tmux/tmux/wiki) 3.x+
 * bash 4+
 * [fzf](https://github.com/junegunn/fzf)
