@@ -12,7 +12,6 @@ OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@pass-copy-to-clipboard" "off")"
 OPT_HIDE_PREVIEW="$(get_tmux_option "@pass-hide-preview" "off")"
 OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "on")"
 OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
-PASS_BIN=""
 
 spinner_pid=""
 
@@ -58,28 +57,38 @@ spinner_stop() {
 
 # ------------------------------------------------------------------------------
 
-detect_pass_bin() {
-    if is_cmd_exists "gopass"; then
-        echo "gopass"
-    elif is_cmd_exists "pass"; then
-        echo "pass"
-    else
-        echo ""
+ensure_gopass() {
+    if ! is_cmd_exists "gopass"; then
+        display_message "install gopass to use this plugin"
+        exit 1
     fi
 }
 
 get_items() {
-    pushd "${PASSWORD_STORE_DIR:-$HOME/.password-store}" 1>/dev/null || exit 2
+    local items
+
+    if items="$(gopass ls --flat 2>/dev/null)"; then
+        printf "%s\n" "$items" | sed '/^[[:space:]]*$/d' | sort
+        return 0
+    fi
+
+    local -r store_root="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
+
+    if [[ ! -d "$store_root" ]]; then
+        return 1
+    fi
+
+    pushd "$store_root" 1>/dev/null || return 1
     find . -type f -name '*.gpg' | sed 's/\.gpg//' | sed 's/^\.\///' | sort
-    popd 1>/dev/null || exit 2
+    popd 1>/dev/null || return 1
 }
 
 get_password() {
-    "$PASS_BIN" show "${1}" | head -n1
+    gopass show --password "${1}" 2>/dev/null | head -n1
 }
 
 get_otp() {
-    "$PASS_BIN" otp "${1}" | head -n1
+    gopass otp "${1}" 2>/dev/null | head -n1
 }
 
 get_login() {
@@ -87,12 +96,116 @@ get_login() {
     local match
 
     for candidate in $keys; do
-        match=$("$PASS_BIN" show "${1}" | grep -i "$candidate" | cut -d ':' -f 2 | xargs)
+        match=$(gopass show "${1}" 2>/dev/null | grep -i "$candidate" | cut -d ':' -f 2 | xargs)
 
-        if [[ ! -z $match ]]; then break; fi
+        if [[ -n $match ]]; then break; fi
     done
 
     echo "$match"
+}
+
+build_preview_command() {
+    if [[ "$OPT_HIDE_PW_FROM_PREVIEW" == "on" ]]; then
+        echo 'gopass show {} | tail -n +2'
+    else
+        echo 'gopass show {}'
+    fi
+}
+
+copy_password_with_gopass() {
+    local -r entry="$1"
+
+    spinner_start "Copying password"
+    if ! gopass show --clip "$entry" >/dev/null 2>&1; then
+        spinner_stop
+        display_message "failed to copy password with gopass"
+        return 1
+    fi
+    spinner_stop
+    return 0
+}
+
+copy_otp_with_gopass() {
+    local -r entry="$1"
+
+    spinner_start "Copying otp"
+    if ! gopass otp --clip "$entry" >/dev/null 2>&1; then
+        spinner_stop
+        display_message "failed to copy otp with gopass"
+        return 1
+    fi
+    spinner_stop
+    return 0
+}
+
+send_to_pane() {
+    local -r pane="$1"
+    local -r value="$2"
+
+    tmux send-keys -t "$pane" -- "$value"
+}
+
+handle_password_selection() {
+    local -r pane="$1"
+    local -r entry="$2"
+
+    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+        copy_password_with_gopass "$entry"
+        return
+    fi
+
+    spinner_start "Fetching password"
+    local password
+    password="$(get_password "$entry")"
+    spinner_stop
+
+    if [[ -z "$password" ]]; then
+        display_message "password not found for $entry"
+        return
+    fi
+
+    send_to_pane "$pane" "$password"
+}
+
+handle_login_selection() {
+    local -r pane="$1"
+    local -r entry="$2"
+
+    spinner_start "Fetching username"
+    local login
+    login="$(get_login "$entry")"
+    spinner_stop
+
+    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+        if ! copy_to_clipboard "$login"; then
+            display_message "failed to copy username to clipboard"
+        fi
+        return
+    fi
+
+    send_to_pane "$pane" "$login"
+}
+
+handle_otp_selection() {
+    local -r pane="$1"
+    local -r entry="$2"
+
+    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
+        copy_otp_with_gopass "$entry"
+        return
+    fi
+
+    spinner_start "Fetching otp"
+    local otp
+    otp="$(get_otp "$entry")"
+    spinner_stop
+
+    if [[ -z "$otp" ]]; then
+        display_message "otp not found for $entry"
+        return
+    fi
+
+    send_to_pane "$pane" "$otp"
 }
 
 # ------------------------------------------------------------------------------
@@ -100,47 +213,46 @@ get_login() {
 main() {
     local -r ACTIVE_PANE="$1"
 
-    PASS_BIN="$(detect_pass_bin)"
-
-    if [[ -z "$PASS_BIN" ]]; then
-        display_message "install gopass or pass to use this plugin"
-        exit 1
-    fi
+    ensure_gopass
 
     local items
     local sel
-    local passwd
-    local login
-    local header='enter=paste, alt-enter=user, ctrl-e=edit, ctrl-d=delete, tab=preview, alt-space=otp'
-    local preview_hidden
-    local preview_cmd
+    local key
+    local entry
+    local -r header='enter=paste, alt-enter=user, ctrl-e=edit, ctrl-d=delete, tab=preview, alt-space=otp'
+    local -a fzf_args=(
+        --inline-info
+        --no-multi
+        --tiebreak=begin
+        --bind=tab:toggle-preview
+        --bind=alt-enter:accept
+        --header="$header"
+        --expect=enter,ctrl-e,ctrl-d,ctrl-c,esc,alt-enter,alt-space
+        --preview="$(build_preview_command)"
+    )
 
     if [[ "$OPT_HIDE_PREVIEW" == "on" ]]; then
-        preview_hidden='--preview-window=hidden'
-    fi
-
-    if [[ "$OPT_HIDE_PW_FROM_PREVIEW" == "on" ]]; then
-        preview_cmd="${PASS_BIN} show {} | tail -n+2"
-    else
-        preview_cmd="${PASS_BIN} show {}"
+        fzf_args+=("--preview-window=hidden")
     fi
 
     spinner_start "Fetching items"
-    items="$(get_items)"
+    if ! items="$(get_items)"; then
+        spinner_stop
+        display_message "unable to list gopass entries"
+        exit 1
+    fi
     spinner_stop
 
-    sel="$(echo "$items" |
-        fzf \
-            --inline-info --no-multi \
-            --tiebreak=begin \
-            --preview="$preview_cmd" \
-            $preview_hidden \
-            --bind=tab:toggle-preview \
-            --header="$header" \
-            --bind=alt-enter:accept \
-            --expect=enter,ctrl-e,ctrl-d,ctrl-c,esc,alt-enter,alt-space)"
+    if [[ -z "$items" ]]; then
+        display_message "no entries found"
+        exit 0
+    fi
 
-    if [ $? -gt 0 ]; then
+    sel="$(printf "%s\n" "$items" |
+        fzf "${fzf_args[@]}")"
+    local -r fzf_status=$?
+
+    if ((fzf_status > 0)); then
         echo "error: unable to complete command - check/report errors above"
         echo "You can also set the fzf path in options (see readme)."
         read -r
@@ -148,54 +260,32 @@ main() {
     fi
 
     key=$(head -1 <<<"$sel")
-    text=$(tail -n +2 <<<"$sel")
+    entry=$(tail -n +2 <<<"$sel")
+
+    if [[ -z "$entry" ]]; then
+        exit 0
+    fi
 
     case $key in
 
     enter)
-        spinner_start "Fetching password"
-        passwd="$(get_password "$text")"
-        spinner_stop
-
-        if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-            copy_to_clipboard "$passwd"
-            clear_clipboard 30
-        else
-            tmux send-keys -t "$ACTIVE_PANE" -- "$passwd"
-        fi
+        handle_password_selection "$ACTIVE_PANE" "$entry"
         ;;
 
     alt-enter)
-        spinner_start "Fetching username"
-        login="$(get_login "$text")"
-        spinner_stop
-
-        if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-            copy_to_clipboard "$login"
-        else
-            tmux send-keys -t "$ACTIVE_PANE" -- "$login"
-        fi
+        handle_login_selection "$ACTIVE_PANE" "$entry"
         ;;
 
     alt-space)
-        spinner_start "Fetching otp"
-        otp="$(get_otp "$text")"
-        spinner_stop
-
-        if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-            copy_to_clipboard "$otp"
-            clear_clipboard 30
-        else
-            tmux send-keys -t "$ACTIVE_PANE" -- "$otp"
-        fi
+        handle_otp_selection "$ACTIVE_PANE" "$entry"
         ;;
 
     ctrl-e)
-        "$PASS_BIN" edit "$text"
+        gopass edit "$entry"
         ;;
 
     ctrl-d)
-        "$PASS_BIN" rm "$text"
+        gopass rm "$entry"
         ;;
 
     esac
