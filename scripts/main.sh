@@ -4,10 +4,6 @@ CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/utils.sh
 source "${CURRENT_DIR}/utils.sh"
 
-if command -v direnv >/dev/null 2>&1; then
-    eval "$(direnv export bash)"
-fi
-
 OPT_HIDE_PREVIEW="$(get_tmux_option "@pass-hide-preview" "off")"
 OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "on")"
 OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
