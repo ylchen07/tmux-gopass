@@ -9,8 +9,8 @@
 - Browse your password-store using fzf
 - Preview password in a tmux split (optional)
 - Detects pbcopy (macOS), xclip or xsel (Linux)
-- Copy password (<kbd>Enter</kbd>)
-- Copy username (<kbd>Alt</kbd>-<kbd>Enter</kbd>)
+- Copy password to clipboard (<kbd>Enter</kbd>) or paste to the pane (<kbd>Ctrl</kbd>-<kbd>Enter</kbd>)
+- Paste username into the active pane (<kbd>Alt</kbd>-<kbd>Enter</kbd>)
 - OTP support (<kbd>Alt</kbd>-<kbd>Space</kbd>)
 - Toggle password preview (<kbd>Tab</kbd>)
 - Relies on gopass for secret lookup and clipboard handling
@@ -61,7 +61,6 @@ NOTE: for changes to take effect,
 you'll need to source again your `~/.tmux.conf` file.
 
 * [@pass-key](#pass-key)
-* [@pass-copy-to-clipboard](#pass-copy-to-clipboard)
 * [@pass-window-size](#pass-window-size)
 * [@pass-hide-pw-from-preview](#pass-hide-pw-from-preview)
 * [@pass-hide-preview](#pass-hide-preview)
@@ -80,20 +79,6 @@ For example:
 
 ```bash
 set -g @pass-key b
-```
-
-### @pass-copy-to-clipboard
-
-```
-default: off
-```
-
-Copies selected password into clipboard.
-
-For example:
-
-```bash
-set -g @pass-copy-to-clipboard on
 ```
 
 ### @pass-window-size

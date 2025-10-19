@@ -8,7 +8,6 @@ if command -v direnv >/dev/null 2>&1; then
     eval "$(direnv export bash)"
 fi
 
-OPT_COPY_TO_CLIPBOARD="$(get_tmux_option "@pass-copy-to-clipboard" "off")"
 OPT_HIDE_PREVIEW="$(get_tmux_option "@pass-hide-preview" "off")"
 OPT_HIDE_PW_FROM_PREVIEW="$(get_tmux_option "@pass-hide-pw-from-preview" "on")"
 OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
@@ -125,19 +124,6 @@ copy_password_with_gopass() {
     return 0
 }
 
-copy_otp_with_gopass() {
-    local -r entry="$1"
-
-    spinner_start "Copying otp"
-    if ! gopass otp --clip "$entry" >/dev/null 2>&1; then
-        spinner_stop
-        display_message "failed to copy otp with gopass"
-        return 1
-    fi
-    spinner_stop
-    return 0
-}
-
 send_to_pane() {
     local -r pane="$1"
     local -r value="$2"
@@ -145,14 +131,15 @@ send_to_pane() {
     tmux send-keys -t "$pane" -- "$value"
 }
 
+handle_password_copy() {
+    local -r entry="$1"
+
+    copy_password_with_gopass "$entry"
+}
+
 handle_password_selection() {
     local -r pane="$1"
     local -r entry="$2"
-
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-        copy_password_with_gopass "$entry"
-        return
-    fi
 
     spinner_start "Fetching password"
     local password
@@ -176,24 +163,12 @@ handle_login_selection() {
     login="$(get_login "$entry")"
     spinner_stop
 
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-        if ! copy_to_clipboard "$login"; then
-            display_message "failed to copy username to clipboard"
-        fi
-        return
-    fi
-
     send_to_pane "$pane" "$login"
 }
 
 handle_otp_selection() {
     local -r pane="$1"
     local -r entry="$2"
-
-    if [[ "$OPT_COPY_TO_CLIPBOARD" == "on" ]]; then
-        copy_otp_with_gopass "$entry"
-        return
-    fi
 
     spinner_start "Fetching otp"
     local otp
@@ -219,14 +194,15 @@ main() {
     local sel
     local key
     local entry
-    local -r fzf_expect_keys='enter,ctrl-c,esc,alt-enter,alt-space'
-    local -r header='enter=paste, alt-enter=user, tab=preview, alt-space=otp'
+    local -r fzf_expect_keys='enter,ctrl-enter,ctrl-c,esc,alt-enter,alt-space'
+    local -r header='enter=copy, ctrl-enter=paste, tab=preview, alt-enter=user, alt-space=otp'
     local -a fzf_args=(
         --inline-info
         --no-multi
         --tiebreak=begin
         --bind=tab:toggle-preview
         --bind=alt-enter:accept
+        --bind=ctrl-enter:accept
         --header="$header"
         --expect="$fzf_expect_keys"
         --preview="$(build_preview_command)"
@@ -270,6 +246,10 @@ main() {
     case $key in
 
     enter)
+        handle_password_copy "$entry"
+        ;;
+
+    ctrl-enter)
         handle_password_selection "$ACTIVE_PANE" "$entry"
         ;;
 
