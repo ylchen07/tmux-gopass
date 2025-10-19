@@ -14,6 +14,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          args: -e SC2181 -e SC1091 scripts/main.sh scripts/utils.sh plugin.tmux
+        run: |
+          shellcheck -e SC2181 -e SC1091 \
+            scripts/main.sh \
+            scripts/utils.sh \
+            plugin.tmux
