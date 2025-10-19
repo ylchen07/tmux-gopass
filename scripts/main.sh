@@ -10,8 +10,6 @@ OPT_DISABLE_SPINNER="$(get_tmux_option "@pass-enable-spinner" "on")"
 
 spinner_pid=""
 
-# ------------------------------------------------------------------------------
-
 # Taken from:
 # https://github.com/yardnsm/dotfiles/blob/master/_setup/utils/spinner.sh
 show_spinner() {
@@ -49,8 +47,6 @@ spinner_stop() {
         spinner_pid=""
     fi
 }
-
-# ------------------------------------------------------------------------------
 
 ensure_gopass() {
     if ! command -v gopass >/dev/null 2>&1; then
@@ -178,8 +174,6 @@ handle_otp_selection() {
 
     send_to_pane "$pane" "$otp"
 }
-
-# ------------------------------------------------------------------------------
 
 main() {
     local -r ACTIVE_PANE="$1"
