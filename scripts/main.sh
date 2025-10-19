@@ -57,7 +57,7 @@ spinner_stop() {
 # ------------------------------------------------------------------------------
 
 ensure_gopass() {
-    if ! is_cmd_exists "gopass"; then
+    if ! command -v gopass >/dev/null 2>&1; then
         display_message "install gopass to use this plugin"
         exit 1
     fi

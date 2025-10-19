@@ -18,20 +18,3 @@ get_tmux_option() {
 display_message() {
     tmux display-message "tmux-pass: $1"
 }
-
-is_cmd_exists() {
-    command -v "$1" &>/dev/null
-    return $?
-}
-
-copy_to_clipboard() {
-    if [[ "$(uname)" == "Darwin" ]] && is_cmd_exists "pbcopy"; then
-        echo -n -- "$1" | pbcopy
-    elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xsel"; then
-        echo -n -- "$1" | xsel -b
-    elif [[ "$(uname)" == "Linux" ]] && is_cmd_exists "xclip"; then
-        echo -n -- "$1" | xclip -i
-    else
-        return 1
-    fi
-}
