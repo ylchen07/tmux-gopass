@@ -1,8 +1,8 @@
-# tmux-pass
+# tmux-gopass
 
 > Quick password-store browser with preview using fzf in tmux.
 
-![tmux-pass preview](http://rafi.io/img/project/tmux-pass/preview.gif)
+![tmux-gopass preview](http://rafi.io/img/project/tmux-pass/preview.gif)
 
 ## Features
 
@@ -19,52 +19,32 @@
 
 ### Requirements
 
-* [gopass](https://www.gopass.pw)
-* [tmux](https://github.com/tmux/tmux/wiki) 3.x+
-* bash 4+
-* [fzf](https://github.com/junegunn/fzf)
+- [gopass](https://www.gopass.pw)
+- [tmux](https://github.com/tmux/tmux/wiki) 3.x+
+- bash 4+
+- [fzf](https://github.com/junegunn/fzf)
 
 ### Using [Tmux Plugin Manager](https://github.com/tmux-plugins/tpm)
 
 Add the following to your list of TPM plugins in `~/.tmux.conf`:
 
 ```bash
-set -g @plugin 'rafi/tmux-pass'
+set -g @plugin 'ylchen07/tmux-gopass'
 ```
 
 Hit prefix + I to fetch and source the plugin.
 You should now be able to use the plugin!
-
-### Manual
-
-Clone the repo:
-
-```bash
-git clone https://github.com/rafi/tmux-pass ~/.tmux/plugins/tmux-pass
-```
-
-Source it in your `~/.tmux.conf`:
-
-```bash
-run-shell ~/.tmux/plugins/tmux-pass/plugin.tmux
-```
-
-Reload tmux config by running:
-
-```bash
-tmux source-file ~/.tmux.conf
-```
 
 ## Configuration
 
 NOTE: for changes to take effect,
 you'll need to source again your `~/.tmux.conf` file.
 
-* [@pass-key](#pass-key)
-* [@pass-window-size](#pass-window-size)
-* [@pass-hide-pw-from-preview](#pass-hide-pw-from-preview)
-* [@pass-hide-preview](#pass-hide-preview)
-* [@pass-enable-spinner](#pass-enable-spinner)
+- [@pass-key](#pass-key)
+- [@pass-window-size](#pass-window-size)
+- [@pass-hide-pw-from-preview](#pass-hide-pw-from-preview)
+- [@pass-hide-preview](#pass-hide-preview)
+- [@pass-enable-spinner](#pass-enable-spinner)
 
 ### @pass-key
 
