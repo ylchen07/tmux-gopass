@@ -177,6 +177,11 @@ handle_otp_selection() {
 
 main() {
     local -r ACTIVE_PANE="$1"
+    local standalone="false"
+
+    if [[ -z "$TMUX" ]] || [[ -z "$ACTIVE_PANE" ]]; then
+        standalone="true"
+    fi
 
     ensure_gopass
 
@@ -184,18 +189,31 @@ main() {
     local sel
     local key
     local entry
-    local -r fzf_expect_keys='enter,ctrl-y,ctrl-c,esc,alt-enter,alt-space'
-    local -r header='enter=copy, ctrl-y=paste, tab=preview, alt-enter=user, alt-space=otp'
+    local fzf_expect_keys
+    local header
     local -a fzf_args=(
         --inline-info
         --no-multi
         --tiebreak=begin
         --bind=tab:toggle-preview
-        --bind=alt-enter:accept
-        --bind=ctrl-y:accept
+        --preview="$(build_preview_command)"
+    )
+
+    if [[ "$standalone" == "true" ]]; then
+        header='enter=copy'
+        fzf_expect_keys='enter'
+    else
+        header='enter=copy, ctrl-y=paste, tab=preview, alt-enter=user, alt-space=otp'
+        fzf_expect_keys='enter,ctrl-y,alt-enter,alt-space'
+        fzf_args+=(
+            --bind=alt-enter:accept
+            --bind=ctrl-y:accept
+        )
+    fi
+
+    fzf_args+=(
         --header="$header"
         --expect="$fzf_expect_keys"
-        --preview="$(build_preview_command)"
     )
 
     if [[ "$OPT_HIDE_PREVIEW" == "on" ]]; then

@@ -35,6 +35,16 @@ set -g @plugin 'ylchen07/tmux-gopass'
 Hit prefix + I to fetch and source the plugin.
 You should now be able to use the plugin!
 
+## Standalone Use (no tmux session)
+
+You can launch the picker directly from a regular shell when you only need clipboard copies. Add an alias to your shell profile (update the path if you cloned somewhere else):
+
+```bash
+alias gopass-copy='PASSWORD_STORE_DIR=${PASSWORD_STORE_DIR:-$HOME/.password-store} ~/.tmux/plugins/tmux-gopass/scripts/main.sh ""'
+```
+
+Invoking `gopass-copy` opens the familiar fzf browser. In this alias the picker only exposes the <kbd>Enter</kbd> action, so you can copy passwords to the clipboard via `gopass --clip` without tmux. Commands that paste into a tmux pane (`Ctrl-Y`, `Alt-Enter`, `Alt-Space`) remain unavailable outside tmux.
+
 ## Configuration
 
 NOTE: for changes to take effect,
