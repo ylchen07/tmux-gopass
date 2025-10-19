@@ -194,15 +194,15 @@ main() {
     local sel
     local key
     local entry
-    local -r fzf_expect_keys='enter,ctrl-enter,ctrl-c,esc,alt-enter,alt-space'
-    local -r header='enter=copy, ctrl-enter=paste, tab=preview, alt-enter=user, alt-space=otp'
+    local -r fzf_expect_keys='enter,ctrl-y,ctrl-c,esc,alt-enter,alt-space'
+    local -r header='enter=copy, ctrl-y=paste, tab=preview, alt-enter=user, alt-space=otp'
     local -a fzf_args=(
         --inline-info
         --no-multi
         --tiebreak=begin
         --bind=tab:toggle-preview
         --bind=alt-enter:accept
-        --bind=ctrl-enter:accept
+        --bind=ctrl-y:accept
         --header="$header"
         --expect="$fzf_expect_keys"
         --preview="$(build_preview_command)"
@@ -249,7 +249,7 @@ main() {
         handle_password_copy "$entry"
         ;;
 
-    ctrl-enter)
+    ctrl-y)
         handle_password_selection "$ACTIVE_PANE" "$entry"
         ;;
 

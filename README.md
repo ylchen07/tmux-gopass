@@ -9,7 +9,7 @@
 - Browse your password-store using fzf
 - Preview password in a tmux split (optional)
 - Detects pbcopy (macOS), xclip or xsel (Linux)
-- Copy password to clipboard (<kbd>Enter</kbd>) or paste to the pane (<kbd>Ctrl</kbd>-<kbd>Enter</kbd>)
+- Copy password to clipboard (<kbd>Enter</kbd>) or paste to the pane (<kbd>Ctrl</kbd>-<kbd>Y</kbd>)
 - Paste username into the active pane (<kbd>Alt</kbd>-<kbd>Enter</kbd>)
 - OTP support (<kbd>Alt</kbd>-<kbd>Space</kbd>)
 - Toggle password preview (<kbd>Tab</kbd>)
