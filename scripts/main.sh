@@ -185,7 +185,7 @@ main() {
     local key
     local entry
     local -r fzf_expect_keys='enter,ctrl-y,ctrl-c,esc,alt-enter,alt-space'
-    local -r header='enter=copy, ctrl-y=paste, tab=preview, alt-enter=user, alt-space=otp'
+    local -r header='enter=📋 copy, ctrl-y=⌨️ paste, tab=👀 preview, alt-enter=🙍 user, alt-space=🔢 otp'
     local -a fzf_args=(
         --inline-info
         --no-multi
