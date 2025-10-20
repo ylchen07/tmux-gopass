@@ -97,9 +97,9 @@ get_login() {
 
 build_preview_command() {
     if [[ "$OPT_HIDE_PW_FROM_PREVIEW" == "on" ]]; then
-        echo 'gopass show {} | tail -n +2'
+        echo 'gopass show {2} | tail -n +2'
     else
-        echo 'gopass show {}'
+        echo 'gopass show {2}'
     fi
 }
 
@@ -186,6 +186,7 @@ main() {
     local entry
     local -r fzf_expect_keys='enter,ctrl-y,ctrl-c,esc,alt-enter,alt-space'
     local -r header='enter=📋 copy, ctrl-y=⌨️ paste, tab=👀 preview, alt-enter=🙍 user, alt-space=🔢 otp'
+    local -r fzf_delimiter=$'\t'
     local -a fzf_args=(
         --inline-info
         --no-multi
@@ -194,6 +195,8 @@ main() {
         --bind=alt-enter:accept
         --bind=ctrl-y:accept
         --header="$header"
+        --delimiter="$fzf_delimiter"
+        --with-nth=1
         --expect="$fzf_expect_keys"
         --preview="$(build_preview_command)"
     )
@@ -215,8 +218,12 @@ main() {
         exit 0
     fi
 
-    sel="$(printf "%s\n" "$items" |
-        fzf "${fzf_args[@]}")"
+    # Provide a display label (with emoji) in the first column while keeping the raw entry in the second.
+    sel="$(
+        printf "%s\n" "$items" |
+            awk -v prefix='🔐 ' 'NF { printf "%s%s\t%s\n", prefix, $0, $0 }' |
+            fzf "${fzf_args[@]}"
+    )"
     local -r fzf_status=$?
 
     if ((fzf_status > 0)); then
@@ -227,7 +234,7 @@ main() {
     fi
 
     key=$(head -1 <<<"$sel")
-    entry=$(tail -n +2 <<<"$sel")
+    entry=$(tail -n +2 <<<"$sel" | cut -d "$fzf_delimiter" -f2-)
 
     if [[ -z "$entry" ]]; then
         exit 0
