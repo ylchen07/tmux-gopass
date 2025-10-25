@@ -199,6 +199,7 @@ main() {
         --with-nth=1
         --expect="$fzf_expect_keys"
         --preview="$(build_preview_command)"
+        --preview-window=right:35%
     )
 
     if [[ "$OPT_HIDE_PREVIEW" == "on" ]]; then
